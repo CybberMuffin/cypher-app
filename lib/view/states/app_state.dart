@@ -1,4 +1,3 @@
-import 'package:cypher_app/model/client.dart';
 import 'package:cypher_app/model/package.dart';
 import 'package:cypher_app/model/simple_client.dart';
 import 'package:flutter/widgets.dart';
