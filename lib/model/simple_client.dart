@@ -1,7 +1,8 @@
-import 'package:cryptography/cryptography.dart';
-import 'package:cypher_app/model/asymetric_message_cypher.dart';
+import 'dart:typed_data';
 import 'package:cypher_app/model/package.dart';
 import 'dart:math';
+
+import 'package:encrypt/encrypt.dart';
 
 const int max = 100000;
 
@@ -9,14 +10,14 @@ class SimpleClient {
   String name;
   List<Package> directory;
   int openKey; //IV
-  int _secretKey;
+  Key _secretKey;
 
   SimpleClient._(this.name);
 
   factory SimpleClient(String name) {
     SimpleClient client = SimpleClient._(name);
     final rng = Random();
-    client._secretKey = rng.nextInt(max);
+    client._secretKey = Key.fromSecureRandom(16);
     client.openKey = rng.nextInt(max);
     client.directory = [];
     return client;
@@ -26,12 +27,12 @@ class SimpleClient {
       directory.isNotEmpty ? directory.last.message : "Empty";
 
   Future<int> getMidNumber(int prime, int n) async {
-    return pow(prime, _secretKey) % n;
+    return pow(prime, _bytesToInteger(_secretKey.bytes)) % n;
   }
 
   void calculateSecretKey(int prime, int n, int midNum) {
-    final commonKey = pow(midNum, _secretKey) % n;
-    _secretKey = commonKey;
+    final int commonKey = pow(midNum, _bytesToInteger(_secretKey.bytes)) % n;
+    _secretKey = Key.fromBase16(int32bytes(commonKey).toString());
   }
 
   String encryptMessage(String message) {
@@ -50,5 +51,18 @@ class SimpleClient {
     }
 
     directory.add(package);
+  }
+
+  Uint8List int32bytes(int value) =>
+      Uint8List(4)..buffer.asInt32List()[0] = value;
+
+  int _bytesToInteger(List<int> bytes) {
+    var value = 0;
+
+    for (var i = 0, length = bytes.length; i < length; i++) {
+      value += bytes[i] * pow(256, i);
+    }
+
+    return value;
   }
 }
